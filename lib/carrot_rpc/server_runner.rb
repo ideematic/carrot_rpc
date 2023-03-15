@@ -1,4 +1,6 @@
 require "active_support/core_ext/string/inflections"
+require 'webrick'
+require 'json'
 
 # Automatically detects, loads, and runs all {CarrotRpc::RpcServer} subclasses under `app/servers` in the project root.
 class CarrotRpc::ServerRunner
@@ -13,7 +15,9 @@ class CarrotRpc::ServerRunner
   # Attributes
 
   attr_reader :signal,
-              :servers
+              :servers,
+              :web_server,
+              :thread_web_server
 
   # @return [CarrotRpc::ServerRunner::Pid]
   attr_reader :pid
@@ -47,7 +51,20 @@ class CarrotRpc::ServerRunner
 
     # Initialize the servers. Set logger.
     run_servers
+    run_alive_check
     stop_servers(signal.wait)
+  end
+
+  def run_alive_check
+    @web_server = WEBrick::HTTPServer.new :Port => 9393, logger: logger
+    @thread_web_server = Thread.new do
+      @web_server.mount_proc '/_liveness' do |req, res|
+        res.body = JSON.dump({status: 'OK'})
+        res.status = 200
+      end
+      @web_server.start
+    end
+    logger.info "Server Liveness start on port 9393"
   end
 
   # Shutdown all servers defined.
@@ -59,6 +76,9 @@ class CarrotRpc::ServerRunner
     end
     # Close the connection once all the other servers are shutdown
     CarrotRpc.configuration.bunny.close
+    logger.info "Shutting Down Server Liveness"
+    @web_server.stop
+    @thread_web_server.join
   end
 
   # Find and require all servers in the app/servers dir.

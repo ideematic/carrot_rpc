@@ -31,15 +31,16 @@ Gem::Specification.new do |spec|
   spec.add_dependency "activesupport", ">= 4.2", "< 8.x"
   # The RabbitMQ library
   spec.add_dependency "bunny", ">= 2.2"
+  spec.add_dependency "webrick", ">= 1.8"
 
   # Development / Test Gems
 
   # debugger
   spec.add_development_dependency "byebug"
   # Gemfile support for grouping gems for development-only or test-only
-  spec.add_development_dependency "bundler", "~> 1.9"
+  spec.add_development_dependency "bundler", ">= 1.9"
   # Running commandline scripts
-  spec.add_development_dependency "rake", "~> 10.0"
+  spec.add_development_dependency "rake", ">= 10.0"
   # Unit test framework
   spec.add_development_dependency "rspec"
   # Style-checker
